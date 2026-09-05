@@ -1,0 +1,37 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    env_file: .env.oracle
+    environment:
+      PORT: "4000"
+    ports:
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      - mosquitto
+
+  mqtt-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    restart: unless-stopped
+    env_file: .env.oracle
+    environment:
+      MQTT_BROKER_URL: mqtt://mosquitto:1883
+    command: npm run mqtt:start
+    depends_on:
+      - mosquitto
+
+  mosquitto:
+    image: eclipse-mosquitto:2
+    restart: unless-stopped
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+    expose:
+      - "1883"
+
+volumes:
+  mosquitto_data:

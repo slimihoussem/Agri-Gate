@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.oracle.example
+.git
+.next
+node_modules
+*.log
+*.tsbuildinfo
