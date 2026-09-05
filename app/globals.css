@@ -1,0 +1,292 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme palette ──────────────────────────────────────────────────────────
+   Every custom Tailwind color is a CSS variable (RGB triplet) resolved via
+   `rgb(var(--x) / <alpha-value>)` in tailwind.config.ts. Mobile-first default
+   is LIGHT (the original static design was dark-only and remains fully
+   preserved under `.dark`). Tailwind's `class` dark-mode strategy toggles the
+   `.dark` class on <html> — see lib/preferences.tsx + the inline script in
+   app/layout.tsx. Hue relationships stay identical across themes:
+   olive = ok, wheat = warning, clay = critical (only lightness inverts). */
+
+:root {
+  --soil-950: 247 244 238;   /* page background #F7F3EC */
+  --soil-900: 237 232 222;   /* panels / cards    #EDE8DE */
+  --soil-800: 226 219 204;   /* raised / inputs   #E2DBCC */
+  --soil-700: 205 195 174;   /* borders           #CDC3AE */
+  --soil-600: 168 158 144;   /* strong borders    #A89E90 */
+  --parchment: 62 52 40;     /* primary text      #3E3428 */
+
+  --olive-400: 84 113 60;    /* olive-500 → readable green text on light */
+  --olive-500: 84 113 60;    /* filled "ok" (white text) */
+  --olive-600: 63 85 48;
+  --olive-700: 50 68 39;
+  --olive-800: 41 56 32;
+  --olive-950: 29 39 23;
+
+  --wheat-400: 184 134 58;   /* warning text on light */
+  --wheat-500: 154 107 35;   /* filled warning (white text) */
+  --wheat-600: 127 88 26;
+  --wheat-950: 43 33 12;
+
+  --clay-300: 224 113 74;
+  --clay-400: 193 68 14;     /* critical text on light */
+  --clay-500: 156 54 9;      /* filled critical (white text) */
+  --clay-600: 122 42 6;
+  --clay-950: 40 15 4;
+}
+
+.dark {
+  --soil-950: 20 18 15;      /* #14120F */
+  --soil-900: 27 24 21;      /* #1B1815 */
+  --soil-800: 36 31 25;      /* #241F19 */
+  --soil-700: 51 44 35;      /* #332C23 */
+  --soil-600: 74 65 54;      /* #4A4136 */
+  --parchment: 240 235 224;  /* #F0EBE0 */
+
+  --olive-400: 139 174 110;  /* #8BAE6E */
+  --olive-500: 107 142 78;   /* #6B8E4E */
+  --olive-600: 84 113 60;    /* #54713C */
+  --olive-700: 68 90 48;
+  --olive-800: 50 66 36;
+  --olive-950: 27 36 20;
+
+  --wheat-400: 228 193 115;  /* #E4C173 */
+  --wheat-500: 212 166 74;   /* #D4A64A */
+  --wheat-600: 184 134 58;   /* #B8863A */
+  --wheat-950: 44 36 16;
+
+  --clay-300: 233 127 92;
+  --clay-400: 224 113 74;    /* #E0714A */
+  --clay-500: 193 68 14;     /* #C1440E */
+  --clay-600: 156 54 9;      /* #9C3609 */
+  --clay-950: 46 18 6;
+}
+
+:root {
+  --font-fraunces: 'Fraunces', serif;
+  --font-plex-sans: 'IBM Plex Sans', sans-serif;
+  --font-plex-mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  background-color: rgb(var(--soil-950));
+  color: rgb(var(--parchment));
+  font-family: var(--font-plex-sans), sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html[lang="ar"] body,
+html[lang="ar"] .font-sans {
+  font-family: var(--font-plex-sans), 'Segoe UI', Tahoma, 'Noto Naskh Arabic', sans-serif;
+}
+
+/* Typography Helpers */
+h1, h2, h3, .font-display {
+  font-family: var(--font-fraunces), serif;
+}
+
+.font-mono, [data-mono="true"], code, pre {
+  font-family: var(--font-plex-mono), monospace;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+/* High-contrast field-optimized styling */
+::selection {
+  background-color: rgb(var(--olive-600));
+  color: #ffffff;
+}
+
+/* Custom Scrollbar — follows the theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--soil-900));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--soil-700));
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--soil-600));
+}
+
+/* Strata Layer Pattern for Moisture Gauge */
+.strata-pattern {
+  background-image: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(255, 255, 255, 0.05) 33%,
+    rgba(0, 0, 0, 0.2) 34%,
+    rgba(255, 255, 255, 0.08) 66%,
+    rgba(0, 0, 0, 0.15) 67%,
+    rgba(255, 255, 255, 0.12) 100%
+  );
+}
+
+/* Field Soil SVG grid pattern */
+.field-grid-bg {
+  background-size: 32px 32px;
+  background-image:
+    linear-gradient(to right, rgba(51, 44, 35, 0.3) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(51, 44, 35, 0.3) 1px, transparent 1px);
+}
+
+/* Accessibility: Prefers Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── RTL (Arabic) — mirror physical utilities the codebase uses ─────────────
+   Flex/grid layouts already flip automatically under dir=rtl; these overrides
+   handle the common physical helpers so the app reads correctly right-to-left. */
+[dir="rtl"] .ml-auto { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .mr-auto { margin-right: 0; margin-left: auto; }
+[dir="rtl"] .text-left { text-align: right; }
+[dir="rtl"] .text-right { text-align: left; }
+[dir="rtl"] .border-r { border-right-width: 0; border-left-width: 1px; }
+[dir="rtl"] .border-l { border-left-width: 0; border-right-width: 1px; }
+
+/* ── GPS map (Leaflet) node pins ──────────────────────────────────────────── */
+.agrigate-node-pin {
+  background: transparent;
+  border: none;
+}
+.agrigate-node-pin .pin-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 4px rgb(var(--soil-950) / 0.45);
+}
+.agrigate-node-pin .pin-wrap.pin-selected {
+  box-shadow: 0 0 0 4px rgb(var(--soil-950) / 0.45), 0 0 0 8px rgba(255, 255, 255, 0.35);
+}
+.agrigate-node-pin .pin-dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid;
+  box-sizing: border-box;
+}
+.leaflet-container {
+  font-family: inherit;
+}
+
+/* ── Overlay z-index scale ──────────────────────────────────────────────
+   Leaflet owns z-index up to 1000 within the map (tiles 400, popups 700,
+   controls 1000). Keep every app-level overlay ABOVE that range so modals
+   always stack on top of the map. All overlay components are also PORTALED
+   to <body> so they escape the map's stacking context — Leaflet popups apply
+   a transform/backdrop-filter that would otherwise trap `position: fixed`
+   descendants and break BOTH their stacking order and their opaque box.
+   Tiers, lowest → highest:
+     --z-map           0      map plane + its own floating controls
+     --z-map-popup     700    Leaflet zone/node popup (leaflet's own pane)
+     --z-overlay       1200   top-level detail/editor modals (NodeDetailModal)
+     --z-overlay-raised 1300  modals opened from a modal (ScheduleModal)
+     --z-overlay-top   1400   confirmations layered above everything (ConfirmDialog)
+   Use these exact tiers when adding any future overlay so stacking can never
+   silently regress. */
+:root {
+  --z-map: 0;
+  --z-map-popup: 700;
+  --z-overlay: 1200;
+  --z-overlay-raised: 1300;
+  --z-overlay-top: 1400;
+}
+
+/* ── Leaflet popups — theme-aware (match the app's cards) ─────────────────
+   The zone/node popups render inside Leaflet's default widget. Prefix with
+   `.leaflet-container` so these rules always beat leaflet.css's own single-class
+   popup styles regardless of CSS bundle order. */
+.leaflet-container .leaflet-popup-content-wrapper {
+  background: rgb(var(--soil-900));
+  color: rgb(var(--parchment));
+  border: 2px solid rgb(var(--soil-700));
+  border-radius: 0.75rem;         /* rounded-xl */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.55);
+  font-family: var(--font-plex-sans), sans-serif;
+  padding: 0;
+}
+.leaflet-container .leaflet-popup-content {
+  margin: 0 !important;
+  line-height: 1.4;
+  color: rgb(var(--parchment));
+}
+.leaflet-container .leaflet-popup-tip {
+  background: rgb(var(--soil-900));
+  border: 2px solid rgb(var(--soil-700));
+}
+.leaflet-container .leaflet-popup-close-button {
+  color: rgb(var(--parchment) / 0.7) !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  top: 6px !important;
+  right: 6px !important;
+  width: 24px !important;
+  height: 24px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: rgb(var(--soil-950) / 0.55);
+  border: 1px solid rgb(var(--soil-700) / 0.8);
+  z-index: 10;
+}
+.leaflet-container .leaflet-popup-close-button:hover {
+  color: rgb(var(--parchment)) !important;
+  background: rgb(var(--soil-900) / 0.9);
+}
+
+/* ── Zone telemetry popup stat tiles (match StatCard visual language) ─── */
+.zone-popup-wrapper {
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.zone-popup-stat {
+  background: rgb(var(--soil-950) / 0.55);
+  border: 1px solid rgb(var(--soil-700));
+  border-radius: 0.5rem;
+}
+.zone-popup-primary-btn {
+  min-height: 44px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  background: rgb(var(--olive-500));
+  color: rgb(var(--soil-950));
+  font-family: var(--font-plex-mono), monospace;
+  font-weight: 700;
+  font-size: 0.75rem;
+  transition: background-color 0.15s;
+}
+.zone-popup-primary-btn:hover {
+  background: rgb(var(--olive-600));
+}

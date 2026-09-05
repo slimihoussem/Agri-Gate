@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: agrigate-api
+    runtime: node
+    buildCommand: npm ci
+    startCommand: npm run server:start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  # Deploy this worker only after configuring a hosted MQTT broker.
+  - type: worker
+    name: agrigate-mqtt
+    runtime: node
+    buildCommand: npm ci
+    startCommand: npm run mqtt:start
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: MQTT_BROKER_URL
+        sync: false
