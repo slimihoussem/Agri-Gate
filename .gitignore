@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 !.env.local.example
+!.env.oracle.example
 
 # Dependencies and build output
 node_modules/
