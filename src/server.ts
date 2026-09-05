@@ -57,11 +57,13 @@ app.use("/api/geocode", geocodeRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Hosted platforms provide PORT; API_PORT remains useful for local development.
-const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
-
-app.listen(PORT, () => {
-  console.log(`[agrigate-api] listening on http://localhost:${PORT} (auth enabled)`);
-});
+// Hosted platforms import the app as a request handler; local/VM execution
+// still starts the normal long-running HTTP server.
+if (process.env.VERCEL !== "1") {
+  const PORT = Number(process.env.PORT ?? process.env.API_PORT ?? 4000);
+  app.listen(PORT, () => {
+    console.log(`[agrigate-api] listening on http://localhost:${PORT} (auth enabled)`);
+  });
+}
 
 export default app;

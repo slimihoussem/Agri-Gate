@@ -1,21 +1,41 @@
-# Vercel + Oracle Cloud deployment
+# Vercel deployment
+
+The frontend and Express API can run in the same Vercel project. The API is
+exported through `api/index.ts` as a serverless function. Supabase remains the
+database. The MQTT worker still needs a separate always-on host.
 
 ## 1. Deploy the frontend to Vercel
 
 1. Open Vercel and choose **Add New -> Project**.
 2. Import `slimihoussem/Agri-Gate` from GitHub.
 3. Vercel detects Next.js from `vercel.json`.
-4. Add this environment variable:
+4. Add these environment variables:
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.your-domain.com
+DATABASE_URL=your_supabase_pooler_connection_string
+JWT_SECRET=your_new_random_secret
+NODE_ENV=production
+NEXT_PUBLIC_API_URL=https://your-vercel-project.vercel.app
 ```
 
 5. Deploy. Vercel provides the frontend URL.
 
 Do not add `DATABASE_URL` or `JWT_SECRET` to Vercel. The browser must only know the public API URL.
 
-## 2. Create the Oracle Cloud VM
+The value of `NEXT_PUBLIC_API_URL` must be the final Vercel deployment URL. You
+can update it after the first deployment and redeploy. Test the API directly:
+
+```text
+https://your-vercel-project.vercel.app/api/health
+```
+
+Expected response:
+
+```json
+{"status":"ok","service":"agrigate-api"}
+```
+
+## 2. Optional: Oracle Cloud VM for MQTT
 
 Create an Ubuntu VM in Oracle Cloud Always Free. Add ingress rules for TCP ports `22`, `80`, and `443`. Do not expose PostgreSQL or the internal MQTT listener publicly.
 
@@ -47,7 +67,7 @@ sudo docker compose -f docker-compose.oracle.yml up -d --build
 sudo docker compose -f docker-compose.oracle.yml ps
 ```
 
-## 3. Add HTTPS for the API
+## 3. Add HTTPS for an optional Oracle API
 
 Point `api.your-domain.com` DNS A record to the Oracle VM public IP. Replace `api.example.com` in `Caddyfile` with that hostname:
 
@@ -71,7 +91,9 @@ Expected response:
 
 ## 4. Update Vercel
 
-Set `NEXT_PUBLIC_API_URL` to the HTTPS API URL, redeploy Vercel, and test login and dashboard loading.
+If the API is running in Vercel, keep `NEXT_PUBLIC_API_URL` set to the Vercel
+project URL. If you later move the API to Oracle, change it to the HTTPS API
+URL and redeploy Vercel.
 
 ## 5. Database migrations
 
