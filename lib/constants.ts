@@ -7,5 +7,7 @@ export const POLL_INTERVAL_MS = 20_000;
  */
 export const ERROR_THRESHOLD = 3;
 
-const raw = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+const raw =
+	process.env.NEXT_PUBLIC_API_URL ??
+	(typeof window !== "undefined" ? window.location.origin : "http://localhost:4000");
 export const API_BASE_URL = raw.replace(/\/$/, "");

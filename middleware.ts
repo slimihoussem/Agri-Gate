@@ -23,7 +23,7 @@ import { NextRequest, NextResponse } from "next/server";
  */
 
 const SESSION_COOKIE = "agrigate_session";
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:4000";
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
@@ -63,7 +63,8 @@ async function sessionValid(req: NextRequest): Promise<boolean> {
   const cookieHeader = req.headers.get("cookie");
   if (!cookieHeader) return false;
   try {
-    const res = await fetch(`${API_BASE_URL}/api/auth/me`, {
+    const apiBaseUrl = configuredApiUrl ?? req.nextUrl.origin;
+    const res = await fetch(`${apiBaseUrl}/api/auth/me`, {
       headers: { cookie: cookieHeader },
       cache: "no-store",
     });
