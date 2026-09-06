@@ -16,6 +16,14 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgres://agrigat_user:agrigat_secret_pwd@localhost:5433/agrigat_db";
 
+const databaseUrl = new URL(connectionString);
+const isLocalDatabase = ["localhost", "127.0.0.1", "::1"].includes(databaseUrl.hostname);
+if (!isLocalDatabase && process.env.ALLOW_DESTRUCTIVE_SEED !== "true") {
+  throw new Error(
+    "Refusing to seed a non-local database. Use a local DATABASE_URL, or explicitly set ALLOW_DESTRUCTIVE_SEED=true."
+  );
+}
+
 const pool = new Pool({ connectionString });
 
 /**

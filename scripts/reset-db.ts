@@ -8,6 +8,14 @@ const connectionString =
   process.env.DATABASE_URL ||
   "postgres://agrigat_user:agrigat_secret_pwd@localhost:5432/agrigat_db";
 
+const databaseUrl = new URL(connectionString);
+const isLocalDatabase = ["localhost", "127.0.0.1", "::1"].includes(databaseUrl.hostname);
+if (!isLocalDatabase && process.env.ALLOW_DESTRUCTIVE_RESET !== "true") {
+  throw new Error(
+    "Refusing to reset a non-local database. Set ALLOW_DESTRUCTIVE_RESET=true only after confirming you have a backup."
+  );
+}
+
 async function reset() {
   console.log("⚠️ Resetting AgriGate Database...");
   const pool = new Pool({ connectionString });
