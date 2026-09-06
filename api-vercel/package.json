@@ -2,6 +2,9 @@
   "name": "agrigate-api-vercel",
   "private": true,
   "version": "1.0.0",
+  "scripts": {
+    "build": "node -e \"console.log('Vercel builds the Express function automatically')\""
+  },
   "dependencies": {
     "@turf/turf": "^7.4.0",
     "bcrypt": "^6.0.0",
