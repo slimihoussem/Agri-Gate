@@ -35,9 +35,10 @@ Expected response:
 ## 2. Deploy the Express API to a second Vercel project
 
 Create another Vercel project from the same GitHub repository. In the project
-settings, set **Framework Preset** to **Express** (or override automatic
-detection to Express). The repository exports the app from `src/server.ts`,
-which Vercel recognizes as the Express entrypoint.
+settings, set **Root Directory** to `api-vercel`. Vercel will then use the
+dedicated `api-vercel/package.json` and `api-vercel/vercel.json`, instead of
+detecting the root Next.js app. The entrypoint imports the app from
+`src/server.ts`.
 
 Add these environment variables to the API project:
 
