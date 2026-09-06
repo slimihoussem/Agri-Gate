@@ -1,32 +1,29 @@
 # Vercel deployment
 
-The frontend and Express API can run in the same Vercel project. The API is
-exported through `api/index.ts` as a serverless function. Supabase remains the
-database. The MQTT worker still needs a separate always-on host.
+Use two Vercel projects from this repository: one Next.js frontend project and
+one Express API project. Supabase remains the database. This avoids mixing two
+Vercel frameworks in one project.
 
 ## 1. Deploy the frontend to Vercel
 
 1. Open Vercel and choose **Add New -> Project**.
 2. Import `slimihoussem/Agri-Gate` from GitHub.
 3. Vercel detects Next.js from `vercel.json`.
-4. Add these environment variables:
+4. Add this environment variable:
 
 ```env
-DATABASE_URL=your_supabase_pooler_connection_string
-JWT_SECRET=your_new_random_secret
-NODE_ENV=production
-NEXT_PUBLIC_API_URL=https://your-vercel-project.vercel.app
+NEXT_PUBLIC_API_URL=https://your-api-project.vercel.app
 ```
 
 5. Deploy. Vercel provides the frontend URL.
 
-Do not add `DATABASE_URL` or `JWT_SECRET` to Vercel. The browser must only know the public API URL.
+Do not add `DATABASE_URL` or `JWT_SECRET` to the frontend project.
 
-The value of `NEXT_PUBLIC_API_URL` must be the final Vercel deployment URL. You
-can update it after the first deployment and redeploy. Test the API directly:
+The value of `NEXT_PUBLIC_API_URL` must be the API project's final Vercel URL.
+Test the API directly:
 
 ```text
-https://your-vercel-project.vercel.app/api/health
+https://your-api-project.vercel.app/api/health
 ```
 
 Expected response:
@@ -35,7 +32,25 @@ Expected response:
 {"status":"ok","service":"agrigate-api"}
 ```
 
-## 2. Optional: Oracle Cloud VM for MQTT
+## 2. Deploy the Express API to a second Vercel project
+
+Create another Vercel project from the same GitHub repository. In the project
+settings, set **Framework Preset** to **Express** (or override automatic
+detection to Express). The repository exports the app from `src/server.ts`,
+which Vercel recognizes as the Express entrypoint.
+
+Add these environment variables to the API project:
+
+```env
+DATABASE_URL=your_supabase_pooler_connection_string
+JWT_SECRET=your_new_random_secret
+NODE_ENV=production
+```
+
+Deploy and test `/api/health`. Then copy the API project's URL into the
+frontend project's `NEXT_PUBLIC_API_URL` and redeploy the frontend.
+
+## 3. Optional: Oracle Cloud VM for MQTT
 
 Create an Ubuntu VM in Oracle Cloud Always Free. Add ingress rules for TCP ports `22`, `80`, and `443`. Do not expose PostgreSQL or the internal MQTT listener publicly.
 
@@ -67,7 +82,7 @@ sudo docker compose -f docker-compose.oracle.yml up -d --build
 sudo docker compose -f docker-compose.oracle.yml ps
 ```
 
-## 3. Add HTTPS for an optional Oracle API
+## 4. Add HTTPS for an optional Oracle API
 
 Point `api.your-domain.com` DNS A record to the Oracle VM public IP. Replace `api.example.com` in `Caddyfile` with that hostname:
 
@@ -89,11 +104,10 @@ Expected response:
 {"status":"ok","service":"agrigate-api"}
 ```
 
-## 4. Update Vercel
+## 5. Update Vercel
 
-If the API is running in Vercel, keep `NEXT_PUBLIC_API_URL` set to the Vercel
-project URL. If you later move the API to Oracle, change it to the HTTPS API
-URL and redeploy Vercel.
+If you later move the API to Oracle, change the frontend's
+`NEXT_PUBLIC_API_URL` to the Oracle HTTPS API URL and redeploy Vercel.
 
 ## 5. Database migrations
 
