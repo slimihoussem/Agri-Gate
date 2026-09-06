@@ -755,11 +755,20 @@ export async function updateZone(
   return request<Zone>(`/zones/${zoneId}`, { method: "PATCH", body: JSON.stringify(patch) });
 }
 
+export interface ZoneDeleteResult {
+  deleted: true;
+  mode: "hard" | "archived";
+  /** Active nodes the server detached + deactivated on a forced removal. */
+  detachedActiveNodes: number;
+}
+
 export async function deleteZone(
-  zoneId: string
-): Promise<{ deleted: true; mode: "hard" | "archived" }> {
-  return request<{ deleted: true; mode: "hard" | "archived" }>(`/zones/${zoneId}`, {
+  zoneId: string,
+  opts?: { force?: boolean }
+): Promise<ZoneDeleteResult> {
+  return request<ZoneDeleteResult>(`/zones/${zoneId}`, {
     method: "DELETE",
+    query: opts?.force === true ? { force: "true" } : undefined,
   });
 }
 

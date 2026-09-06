@@ -73,11 +73,21 @@ router.patch(
   })
 );
 
-/** DELETE /api/zones/:zoneId — admin; node-count guard + history-aware lifecycle. */
+/** DELETE /api/zones/:zoneId — admin; force-confirm lifecycle + history-aware mode. */
+const zoneDeleteQuerySchema = z.object({
+  force: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
+});
+
 router.delete(
   "/:zoneId",
   requirePermission("zones.edit"),
-  validateRequest({ source: "params", schema: zoneIdParamsSchema }),
+  validateRequest(
+    { source: "params", schema: zoneIdParamsSchema },
+    { source: "query", schema: zoneDeleteQuerySchema }
+  ),
   asyncHandler(async (req, res) => {
     const ctx = accessContextOf(req.user!);
     const farmId = await zoneLifecycleService.getZoneFarmId(req.params.zoneId);
@@ -86,7 +96,22 @@ router.delete(
       return;
     }
     await assertFarmAccess(ctx, farmId, "zone");
-    res.json(await zoneLifecycleService.deleteZoneWithLifecycle(req.params.zoneId));
+    const { force } = req.query as unknown as { force: boolean };
+    try {
+      res.json(await zoneLifecycleService.deleteZoneWithLifecycle(req.params.zoneId, { force }));
+    } catch (err) {
+      // Confirm-required: machine-readable count so the UI can offer the
+      // "remove anyway?" popup instead of surfacing a dead-end error.
+      if (err instanceof zoneLifecycleService.ZoneDeleteBlockedError) {
+        res.status(409).json({
+          error: err.message,
+          activeNodeCount: err.activeNodeCount,
+          confirmRequired: true,
+        });
+        return;
+      }
+      throw err;
+    }
   })
 );
 

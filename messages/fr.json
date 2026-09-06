@@ -611,8 +611,12 @@
     "working": "Traitement…",
     "cancel": "Annuler",
     "confirmRemoveZoneTitle": "Confirmer la suppression de la zone",
-    "confirmRemoveZoneMsg": "Supprimer la zone « {name} » ? Si des nœuds actifs y sont encore assignés, le serveur le bloquera. Les nœuds archivés sont détachés (désassignés) automatiquement. La zone est supprimée définitivement si elle n’a aucun historique, ou archivée pour préserver ses enregistrements.",
+    "confirmRemoveZoneMsg": "Supprimer la zone « {name} » ? Si des nœuds actifs y sont encore assignés, une seconde confirmation sera demandée — ils seront désactivés et désassignés (leur historique est préservé). La zone est supprimée définitivement si elle n’a aucun historique, ou archivée pour préserver ses enregistrements.",
     "removeZone": "Supprimer la zone",
+    "confirmForceRemoveZoneTitle": "La zone contient encore des nœuds actifs",
+    "confirmForceRemoveZoneMsg": "« {name} » contient encore {count, plural, one {# nœud actif} other {# nœuds actifs}}. La suppression de la zone les désactivera et les désassignera (leur historique est préservé). Supprimer quand même ?",
+    "removeZoneAnyway": "Supprimer quand même",
+    "zoneDeletedWithNodes": "Zone « {name} » supprimée — {count, plural, one {# nœud désactivé et désassigné} other {# nœuds désactivés et désassignés}}.",
     "zoneField": {
       "name": "Nom de la zone",
       "namePh": "ex. Champ Nord",

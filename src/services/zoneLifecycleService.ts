@@ -29,6 +29,31 @@ export interface ZonePatch {
 
 export type ZoneDeleteMode = "hard" | "archived";
 
+export interface ZoneDeleteResult {
+  deleted: true;
+  mode: ZoneDeleteMode;
+  /** Active nodes detached + deactivated by a forced removal (0 when none). */
+  detachedActiveNodes: number;
+}
+
+/**
+ * Thrown when a zone still has active nodes and the caller did not confirm
+ * (force). The route translates this to 409 + { activeNodeCount } so the UI
+ * can show the "remove anyway?" popup instead of a dead-end error.
+ */
+export class ZoneDeleteBlockedError extends HttpError {
+  constructor(
+    public readonly activeNodeCount: number,
+    zoneName: string
+  ) {
+    super(
+      409,
+      `Zone "${zoneName}" still has ${activeNodeCount} active node(s) assigned — confirm removal to deactivate and unassign them.`
+    );
+    this.name = "ZoneDeleteBlockedError";
+  }
+}
+
 export interface ZoneInfo {
   id: string;
   name: string;
@@ -148,32 +173,63 @@ export async function updateZone(zoneId: string, patch: ZonePatch): Promise<void
 
 /**
  * Delete-with-lifecycle:
- *   active nodes assigned    → 400 (reassign/remove first; NEVER cascade)
- *   archived-only nodes      → detached on hard delete (zone_id = NULL)
- *   no history (logs/alerts) → hard delete
- *   old logs/alerts present  → archive (active=false), records preserved
+ *   active nodes assigned + no force → 409 ZoneDeleteBlockedError (UI confirms,
+ *                                      then retries with force — NEVER a dead end)
+ *   active nodes assigned + force  → active nodes are DEACTIVATED + detached
+ *                                    (zone_id = NULL), then delete proceeds
+ *   archived-only nodes            → detached on hard delete (zone_id = NULL)
+ *   no history (logs/alerts)       → hard delete
+ *   old logs/alerts present        → archive (active=false), records preserved
  *
- * Only ACTIVE nodes block zone removal — archived nodes are detached (unassigned)
- * so the zone can be removed even if it still has archived nodes, and those
- * detached nodes can no longer be reactivated against a gone zone.
+ * Safety that force can NEVER bypass: a valve currently irrigating in this
+ * zone blocks removal with 409 (mirrors the node-removal guard).
+ *
+ * Detaching (rather than deleting) the nodes preserves all telemetry and
+ * history; a detached node can be reassigned to another zone afterwards.
  */
 export async function deleteZoneWithLifecycle(
-  zoneId: string
-): Promise<{ deleted: true; mode: ZoneDeleteMode }> {
+  zoneId: string,
+  opts?: { force?: boolean }
+): Promise<ZoneDeleteResult> {
+  const zone = await getZoneInfo(zoneId);
+  if (!zone) throw HttpError.notFound(`Zone ${zoneId} not found`);
+
+  // HARD SAFETY — a running valve blocks removal, confirmed or not.
+  const running = await pool.query(
+    `
+    SELECT 1 FROM irrigation_logs
+    WHERE zone_id = $1 AND skipped = FALSE AND ended_at IS NULL
+    LIMIT 1
+    `,
+    [zoneId]
+  );
+  if ((running.rowCount ?? 0) > 0) {
+    throw new HttpError(
+      409,
+      `Zone "${zone.name}" has a valve currently irrigating — stop the cycle before removing it`
+    );
+  }
+
   const nodeCount = await pool.query<{ count: number }>(
     `SELECT COUNT(*)::int AS count FROM nodes WHERE zone_id = $1 AND active`,
     [zoneId]
   );
   const nodes = nodeCount.rows[0]?.count ?? 0;
-  if (nodes > 0) {
-    throw new HttpError(
-      400,
-      `Zone has ${nodes} active node(s) assigned — reassign, remove, or archive them before deleting this zone.`
-    );
+  if (nodes > 0 && !opts?.force) {
+    throw new ZoneDeleteBlockedError(nodes, zone.name);
   }
 
-  const zoneExists = await getZoneInfo(zoneId);
-  if (!zoneExists) throw HttpError.notFound(`Zone ${zoneId} not found`);
+  let detachedActiveNodes = 0;
+  if (nodes > 0) {
+    // Forced removal: park the live equipment first — deactivate + detach so
+    // no active valve is left without a zone and no schedule keeps firing.
+    const detached = await pool.query(
+      `UPDATE nodes SET active = FALSE, zone_id = NULL, updated_at = NOW()
+       WHERE zone_id = $1 AND active`,
+      [zoneId]
+    );
+    detachedActiveNodes = detached.rowCount ?? 0;
+  }
 
   const history = await pool.query<{ count: number }>(
     `
@@ -186,7 +242,7 @@ export async function deleteZoneWithLifecycle(
 
   if (historyCount > 0) {
     await pool.query(`UPDATE zones SET active = FALSE, updated_at = NOW() WHERE id = $1`, [zoneId]);
-    return { deleted: true, mode: "archived" };
+    return { deleted: true, mode: "archived", detachedActiveNodes };
   }
 
   // Hard delete: detach any archived nodes so nothing references a removed zone.
@@ -197,5 +253,5 @@ export async function deleteZoneWithLifecycle(
 
   const deleted = await pool.query(`DELETE FROM zones WHERE id = $1`, [zoneId]);
   if ((deleted.rowCount ?? 0) === 0) throw HttpError.notFound(`Zone ${zoneId} not found`);
-  return { deleted: true, mode: "hard" };
+  return { deleted: true, mode: "hard", detachedActiveNodes };
 }

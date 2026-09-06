@@ -611,8 +611,12 @@
     "working": "Working…",
     "cancel": "Cancel",
     "confirmRemoveZoneTitle": "Confirm Zone Removal",
-    "confirmRemoveZoneMsg": "Remove zone “{name}”? If active nodes are still assigned the server blocks it. Archived nodes are detached (unassigned) automatically. The zone is hard-deleted if it has no history, or archived to preserve its records.",
+    "confirmRemoveZoneMsg": "Remove zone “{name}”? If active nodes are still assigned you’ll get a second confirmation — they will be deactivated and unassigned (their history is preserved). The zone is hard-deleted if it has no history, or archived to preserve its records.",
     "removeZone": "Remove Zone",
+    "confirmForceRemoveZoneTitle": "Zone Still Has Active Nodes",
+    "confirmForceRemoveZoneMsg": "“{name}” still has {count, plural, one {# active node} other {# active nodes}}. Removing the zone will deactivate and unassign them (their history is preserved). Remove anyway?",
+    "removeZoneAnyway": "Remove Anyway",
+    "zoneDeletedWithNodes": "Zone “{name}” removed — {count, plural, one {# node} other {# nodes}} deactivated and unassigned.",
     "zoneField": {
       "name": "Zone name",
       "namePh": "e.g. North Field",

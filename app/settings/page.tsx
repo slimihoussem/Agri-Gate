@@ -41,6 +41,7 @@ import {
   type AuthUser,
   type AdminOrg,
   type OrgFarmStats,
+  ApiError,
 } from "@/lib/api";
 import { useAuth } from "@/lib/hooks/useAuth";
 import { usePrimaryFarmId } from "@/lib/hooks";
@@ -428,6 +429,7 @@ function ZonesCard({ farmId }: { farmId: string }) {
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Zone | null>(null);
   const [pendingRemove, setPendingRemove] = useState<Zone | null>(null);
+  const [forceRemove, setForceRemove] = useState<{ zone: Zone; activeNodeCount: number } | null>(null);
   const [reactivating, setReactivating] = useState<string | null>(null);
   const t = useTranslations("settings");
 
@@ -475,9 +477,46 @@ function ZonesCard({ farmId }: { farmId: string }) {
       }
       await reload();
     } catch (err) {
-      // Server 400 (nodes still assigned) surfaces INLINE with the real reason.
+      // 409 + node count → NOT a dead end: offer the "remove anyway?" popup,
+      // which detaches + deactivates the nodes and proceeds. Anything else
+      // (e.g. a valve currently irrigating) surfaces INLINE with the reason.
+      const blocked =
+        err instanceof ApiError &&
+        err.status === 409 &&
+        typeof (err.data as { activeNodeCount?: unknown } | null)?.activeNodeCount === "number"
+          ? (err.data as { activeNodeCount: number }).activeNodeCount
+          : null;
+      if (blocked !== null) {
+        setForceRemove({ zone: pendingRemove, activeNodeCount: blocked });
+        setPendingRemove(null);
+      } else {
+        setLocalError((err as Error).message);
+        setPendingRemove(null);
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleForceRemoveConfirmed = async (): Promise<void> => {
+    if (!forceRemove) return;
+    setBusy(true);
+    setLocalError(null);
+    try {
+      const res = await deleteZone(forceRemove.zone.id, { force: true });
+      const detached = res.detachedActiveNodes ?? 0;
+      if (detached > 0) {
+        notify(t("zoneDeletedWithNodes", { name: forceRemove.zone.name, count: detached }));
+      } else if (res.mode === "archived") {
+        notify(t("zoneArchived", { name: forceRemove.zone.name }));
+      } else {
+        notify(t("zoneDeleted", { name: forceRemove.zone.name }));
+      }
+      setForceRemove(null);
+      await reload();
+    } catch (err) {
       setLocalError((err as Error).message);
-      setPendingRemove(null);
+      setForceRemove(null);
     } finally {
       setBusy(false);
     }
@@ -633,6 +672,24 @@ function ZonesCard({ farmId }: { farmId: string }) {
           variant="danger"
           onConfirm={() => void handleRemoveConfirmed()}
           onCancel={() => setPendingRemove(null)}
+        />
+      )}
+
+      {/* Forced removal — zone still has active nodes: warn, then proceed.
+          The nodes are deactivated + unassigned, never deleted. */}
+      {forceRemove && (
+        <ConfirmDialog
+          isOpen
+          title={t("confirmForceRemoveZoneTitle")}
+          message={t("confirmForceRemoveZoneMsg", {
+            name: forceRemove.zone.name,
+            count: forceRemove.activeNodeCount,
+          })}
+          confirmText={busy ? t("working") : t("removeZoneAnyway")}
+          cancelText={t("cancel")}
+          variant="danger"
+          onConfirm={() => void handleForceRemoveConfirmed()}
+          onCancel={() => setForceRemove(null)}
         />
       )}
     </section>
